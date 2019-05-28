@@ -99,7 +99,7 @@ function reset(ctx: CanvasRenderingContext2D): View {
 function main() {
   // Create the canvas.
 
-  const canvas = <HTMLCanvasElement> document.getElementById("myCanvas");
+  const canvas = <HTMLCanvasElement> document.getElementById('myCanvas');
   canvas.width = window.innerWidth
   canvas.height = window.innerHeight
   
