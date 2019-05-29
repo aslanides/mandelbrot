@@ -1,3 +1,5 @@
+// import "colormap";
+
 interface View {
   xCenter: number;
   yCenter: number;
@@ -28,39 +30,53 @@ function mandelbrot(
   // Get image data.
   const numColors = 255 ** 3;
   const imageData = ctx.getImageData(0, 0, width, height);
+  const escapeTimes = new Float32Array(width * height);
+  const histogram = new Float32Array(maxIterations);
+  let totalIterations = 0;
 
-  for (let x = 0; x < width; x++) {
-    for (let y = 0; y < height; y++) {
+  // Color each pixel by escape time.
+  for (let i = 0; i < width; i++) {
+    for (let j = 0; j < height; j++) {
       let escapeTime = 0;
       // Transform from pixels -> coordinate system.
-      const a = xMin + (view.xRange * x) / width;
-      const b = yMin + (view.yRange * y) / height;
-      let currentX = 0;
-      let currentY = 0;
-      for (let i = 0; i < maxIterations; i++) {
+      const a = xMin + (view.xRange * i) / width;
+      const b = yMin + (view.yRange * j) / height;
+      let x = 0;
+      let y = 0;
+      for (let iter = 0; iter < maxIterations; iter++) {
         /* z <- z^2 + c
              = (x + yi)^2 + (a + bi)
              = x^2 -y^2 + 2xyi + a + bi
              = (x^2 -y^2 + a) + (2xy + b)i
         */
-        const tempX = currentX ** 2 - currentY ** 2 + a;
-        currentY = 2 * currentX * currentY + b;
-        currentX = tempX;
-        if (currentX ** 2 + currentY ** 2 > escapeModulusSquared) {
+        const xTemp = x ** 2 - y ** 2 + a;
+        y = 2 * x * y + b;
+        x = xTemp;
+        if (x ** 2 + y ** 2 > escapeModulusSquared) {
           break;
         }
         escapeTime++;
       }
 
-      // Color the pixel.
-      const pixelIdx = 4 * (x + width * y);
-      let color = Math.floor((escapeTime / maxIterations) * numColors);
-      for (let i = 0; i < 3; i++) {
-        imageData.data[pixelIdx + i] = color % 255;
-        color /= 255;
-      }
+      escapeTimes[i + width * j] = escapeTime;
+      histogram[escapeTime]++;
+      totalIterations++;
     }
   }
+
+  for (let i =0; i < maxIterations; i++) {
+    histogram[i] /= totalIterations;
+  }
+
+  for (let i = 0; i < width * height; i++) {
+    let time = escapeTimes[i];
+    let color = Math.floor(histogram[time] * numColors);
+    for (let channel = 0; channel < 3; channel++) {
+      imageData.data[4 * i + channel] = color % 255;
+      color /= 255;
+    }
+  }
+
   ctx.putImageData(imageData, 0, 0);
 }
 
@@ -104,7 +120,7 @@ function main() {
   // Make initial 'view'.
   let view: View;
 
-  // Create the canvas.
+  // Get the canvas.
   const canvas = document.getElementById('canvas') as HTMLCanvasElement;
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -113,7 +129,7 @@ function main() {
   const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
   ctx.fillStyle = '#000000';
 
-  // Create a reset button.
+  // Get a reset button.
   const resetButton = document.getElementById('reset') as HTMLButtonElement;
 
   // Add event listeners for reset and zoom.

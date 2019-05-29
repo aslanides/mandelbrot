@@ -8,4 +8,4 @@ Messing around with Typescript.
 tsc mandelbrot.ts
 ```
 
-Then point your browser to `mandelbrot.html`. Click anywhere on the image to zoom.
+Then point your browser to `index.html`. Click anywhere on the image to zoom.
