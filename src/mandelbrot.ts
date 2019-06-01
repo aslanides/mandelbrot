@@ -12,7 +12,6 @@ export function mandelbrot(
   // Get image bounds in the coordinate system.
   const xMin = view.xCenter - view.xRange / 2;
   const yMin = view.yCenter - view.yRange / 2;
-  console.log(`Computing; centered on ${view.xCenter} + ${view.yCenter}i.`);
 
   const escapeTimes = new Uint32Array(view.width * view.height);
 

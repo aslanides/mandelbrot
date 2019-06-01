@@ -24,6 +24,7 @@ export function zoom(event: MouseEvent, view: View, zoomFactor = 2): View {
   // Get the new view center.
   view.xCenter = xMin + (view.xRange * event.layerX) / view.width;
   view.yCenter = yMin + (view.yRange * event.layerY) / view.height;
+  console.log(`Centered on ${view.xCenter} + ${view.yCenter}i.`);
 
   // Zoom.
   view.xRange /= zoomFactor;

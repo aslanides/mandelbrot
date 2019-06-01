@@ -4,6 +4,7 @@ import * as draw from './draw';
 import * as view from './view';
 
 export const MAX_ITERATIONS = 1000;
+const ZOOM_FACTOR = 2;
 const NUM_WORKERS = 9;
 const SQRT_NUM_WORKERS = Math.sqrt(NUM_WORKERS);
 console.assert(SQRT_NUM_WORKERS === Math.floor(SQRT_NUM_WORKERS));
@@ -26,7 +27,7 @@ function main() {
   // Create workers for rendering subviews.
   let v = view.reset(ctx);
   let views = new Array<view.View>(NUM_WORKERS);
-  const workers = new Array<Worker>(NUM_WORKERS);
+  const workers = new Array<Worker>();
   for (let i = 0; i < NUM_WORKERS; i++) {
     // Create a new 'Mandelbrot worker'.
     const worker = new Worker('mandelbrot.ts');
@@ -34,7 +35,7 @@ function main() {
       const times = e.data as Uint32Array;
       draw.draw(ctx, views[i], times, MAX_ITERATIONS);
     };
-    workers[i] = worker;
+    workers.push(worker);
   }
 
   // Reset handler.
@@ -42,15 +43,27 @@ function main() {
   resetButton.addEventListener('click', _ => {
     v = view.reset(ctx);
     views = view.split(v, NUM_WORKERS);
-    console.log(views);
     for (let i = 0; i < NUM_WORKERS; i++) {
       workers[i].postMessage(views[i]);
     }
   });
 
-  // Zoom handler.
+  // Reset.
+  resetButton.dispatchEvent(new MouseEvent('click'))
+
+  // Zoom in handler.
   canvas.addEventListener('click', e => {
-    v = view.zoom(e, v);
+    v = view.zoom(e, v, ZOOM_FACTOR);
+    views = view.split(v, NUM_WORKERS);
+    for (let i = 0; i < NUM_WORKERS; i++) {
+      workers[i].postMessage(views[i]);
+    }
+  });
+
+  // Zoom out handler.
+  canvas.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    v = view.zoom(e, v, 1 / ZOOM_FACTOR);
     views = view.split(v, NUM_WORKERS);
     for (let i = 0; i < NUM_WORKERS; i++) {
       workers[i].postMessage(views[i]);
