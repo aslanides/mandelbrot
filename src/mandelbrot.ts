@@ -17,7 +17,9 @@ export function mandelbrot(
   // Get image bounds in the coordinate system.
   const xMin = view.xCenter - view.xRange / 2;
   const yMin = view.yCenter - view.yRange / 2;
-  console.log(`Centered on ${view.xCenter} + ${view.yCenter}i.`);
+  console.log(
+    `Computing Mandelbrot, centered on ${view.xCenter} + ${view.yCenter}i.`
+  );
 
   const escapeTimes = new Float32Array(view.width * view.height);
 
@@ -51,3 +53,9 @@ export function mandelbrot(
 
   return escapeTimes;
 }
+
+onmessage = (e: MessageEvent) => {
+  const view = e.data as View;
+  const times = mandelbrot(view);
+  postMessage(times);
+};

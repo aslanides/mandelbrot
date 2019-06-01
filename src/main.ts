@@ -1,4 +1,4 @@
-import { View, mandelbrot } from './mandelbrot';
+import { mandelbrot, View } from './mandelbrot';
 
 function zoom(event: MouseEvent, view: View, zoomFactor = 2): View {
   /* Zooms the view given a user click. */
@@ -67,10 +67,6 @@ function reset(ctx: CanvasRenderingContext2D): View {
 function main() {
   /* Runs the Mandelbrot visualization.*/
 
-  // Make initial 'view'.
-  let view: View;
-  let times: Float32Array;
-
   // Get the canvas.
   const canvas = document.getElementById('canvas') as HTMLCanvasElement;
   canvas.width = window.innerWidth;
@@ -82,17 +78,22 @@ function main() {
 
   // Get a reset button.
   const resetButton = document.getElementById('reset') as HTMLButtonElement;
+  const worker = new Worker('mandelbrot.ts');
+
+  let view: View;
+  worker.onmessage = (e: MessageEvent) => {
+    const times = e.data as Float32Array;
+    draw(ctx, times);
+  };
 
   // Add event listeners for reset and zoom.
   resetButton.addEventListener('click', _ => {
     view = reset(ctx);
-    times = mandelbrot(view);
-    draw(ctx, times);
+    worker.postMessage(view);
   });
   canvas.addEventListener('click', e => {
     view = zoom(e, view);
-    times = mandelbrot(view);
-    draw(ctx, times);
+    worker.postMessage(view);
   });
 
   //
