@@ -1,46 +1,33 @@
-// import "colormap";
-
 interface View {
   xCenter: number;
   yCenter: number;
   xRange: number;
   yRange: number;
+  width: number;
+  height: number;
 }
 
 function mandelbrot(
-  ctx: CanvasRenderingContext2D,
   view: View,
   maxIterations = 1000,
-  escapeModulusSquared = 4
-): void {
+  escapeModulusSquared = 256
+): Float32Array {
   /* Naive escape time algorithm.*/
 
   // Get image bounds in the coordinate system.
   const xMin = view.xCenter - view.xRange / 2;
-  const xMax = view.xCenter + view.xRange / 2;
   const yMin = view.yCenter - view.yRange / 2;
-  const yMax = view.yCenter + view.yRange / 2;
   console.log(`Centered on ${view.xCenter} + ${view.yCenter}i.`);
 
-  // Reset canvas.
-  const width = ctx.canvas.width;
-  const height = ctx.canvas.height;
-  ctx.fillRect(0, 0, width, height);
-
-  // Get image data.
-  const numColors = 255 ** 3;
-  const imageData = ctx.getImageData(0, 0, width, height);
-  const escapeTimes = new Float32Array(width * height);
-  const histogram = new Float32Array(maxIterations);
-  let totalIterations = 0;
+  const escapeTimes = new Float32Array(view.width * view.height);
 
   // Color each pixel by escape time.
-  for (let i = 0; i < width; i++) {
-    for (let j = 0; j < height; j++) {
+  for (let i = 0; i < view.width; i++) {
+    for (let j = 0; j < view.height; j++) {
       let escapeTime = 0;
       // Transform from pixels -> coordinate system.
-      const a = xMin + (view.xRange * i) / width;
-      const b = yMin + (view.yRange * j) / height;
+      const a = xMin + (view.xRange * i) / view.width;
+      const b = yMin + (view.yRange * j) / view.height;
       let x = 0;
       let y = 0;
       for (let iter = 0; iter < maxIterations; iter++) {
@@ -58,34 +45,14 @@ function mandelbrot(
         escapeTime++;
       }
 
-      escapeTimes[i + width * j] = escapeTime;
-      histogram[escapeTime]++;
-      totalIterations++;
+      escapeTimes[i + view.width * j] = escapeTime;
     }
   }
 
-  for (let i =0; i < maxIterations; i++) {
-    histogram[i] /= totalIterations;
-  }
-
-  for (let i = 0; i < width * height; i++) {
-    let time = escapeTimes[i];
-    let color = Math.floor(histogram[time] * numColors);
-    for (let channel = 0; channel < 3; channel++) {
-      imageData.data[4 * i + channel] = color % 255;
-      color /= 255;
-    }
-  }
-
-  ctx.putImageData(imageData, 0, 0);
+  return escapeTimes;
 }
 
-function zoom(
-  event: MouseEvent,
-  ctx: CanvasRenderingContext2D,
-  view: View,
-  zoomFactor = 2
-): View {
+function zoom(event: MouseEvent, view: View, zoomFactor = 2): View {
   /* Zooms the view given a user click. */
 
   // Get the top left corner of the current view.
@@ -93,14 +60,47 @@ function zoom(
   const yMin = view.yCenter - view.yRange / 2;
 
   // Get the new view center.
-  view.xCenter = xMin + (view.xRange * event.layerX) / ctx.canvas.width;
-  view.yCenter = yMin + (view.yRange * event.layerY) / ctx.canvas.height;
+  view.xCenter = xMin + (view.xRange * event.layerX) / view.width;
+  view.yCenter = yMin + (view.yRange * event.layerY) / view.height;
 
   // Zoom.
   view.xRange /= zoomFactor;
   view.yRange /= zoomFactor;
 
   return view;
+}
+
+function draw(
+  ctx: CanvasRenderingContext2D,
+  escapeTimes: Float32Array,
+  maxIterations = 1000
+) {
+  // Reset canvas.
+  const width = ctx.canvas.width;
+  const height = ctx.canvas.height;
+  ctx.fillRect(0, 0, width, height);
+  // Get image data.
+  const numColors = 255 ** 3;
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const histogram = new Float32Array(maxIterations);
+
+  let totalIterations = 0;
+  for (let i = 0; i < width * height; i++) {
+    const time = escapeTimes[i];
+    histogram[time]++;
+    totalIterations++;
+  }
+
+  for (let i = 0; i < width * height; i++) {
+    const time = escapeTimes[i];
+    let color = Math.floor((histogram[time] * numColors) / totalIterations);
+    for (let channel = 0; channel < 3; channel++) {
+      imageData.data[4 * i + channel] = color % 255;
+      color /= 255;
+    }
+  }
+
+  ctx.putImageData(imageData, 0, 0);
 }
 
 function reset(ctx: CanvasRenderingContext2D): View {
@@ -111,6 +111,8 @@ function reset(ctx: CanvasRenderingContext2D): View {
     yCenter: 0,
     xRange: 3.5,
     yRange: 2,
+    width: ctx.canvas.width,
+    height: ctx.canvas.height,
   };
 }
 
@@ -119,6 +121,7 @@ function main() {
 
   // Make initial 'view'.
   let view: View;
+  let times: Float32Array;
 
   // Get the canvas.
   const canvas = document.getElementById('canvas') as HTMLCanvasElement;
@@ -135,11 +138,13 @@ function main() {
   // Add event listeners for reset and zoom.
   resetButton.addEventListener('click', _ => {
     view = reset(ctx);
-    mandelbrot(ctx, view);
+    times = mandelbrot(view);
+    draw(ctx, times);
   });
   canvas.addEventListener('click', e => {
-    view = zoom(e, ctx, view);
-    mandelbrot(ctx, view);
+    view = zoom(e, view);
+    times = mandelbrot(view);
+    draw(ctx, times);
   });
 
   //
