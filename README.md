@@ -2,10 +2,22 @@
 
 Messing around with Typescript.
 
-## Usage
+## Set-up
+
+Note: this assumes you have a recent version of [node](nodejs.org) installed.
+
+To install dependencies:
 
 ```
-tsc mandelbrot.ts
+npm install
 ```
 
-Then point your browser to `index.html`. Click anywhere on the image to zoom.
+This will install [parcel](parceljs.org), which is used to serve the page.
+
+To run locally:
+
+```
+npm run serve
+```
+
+Then click anywhere on the page to zoom.

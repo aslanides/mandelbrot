@@ -1,0 +1,33 @@
+{
+  "name": "mandelbrot",
+  "version": "0.1.3",
+  "description": "Messing around with Mandelbrot set and TypeScript.",
+  "main": "src/main.ts",
+  "scripts": {
+    "serve": "parcel src/index.html",
+    "fix": "gts fix"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aslanides/mandelbrot.git"
+  },
+  "keywords": [
+    "mandelbrot",
+    "fractal",
+    "typescript",
+    "visualization"
+  ],
+  "author": "John Aslanides",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/aslanides/mandelbrot/issues"
+  },
+  "homepage": "https://github.com/aslanides/mandelbrot#readme",
+  "dependencies": {
+    "parcel-bundler": "^1.12.3"
+  },
+  "devDependencies": {
+    "gts": "^1.0.0",
+    "typescript": "~3.4.0"
+  }
+}
