@@ -1,12 +1,8 @@
 /* Functions for computing the Mandelbrot set. */
 
-import { View } from './view';
+import { reset, View } from './view';
 
-export function mandelbrot(
-  view: View,
-  maxIterations = 1000,
-  escapeModulusSquared = 4
-): Uint32Array {
+export function mandelbrot(view: View, escapeModulusSquared = 4): Uint32Array {
   /* Naive escape time algorithm.*/
 
   // Get image bounds in the coordinate system.
@@ -24,16 +20,18 @@ export function mandelbrot(
       const b = yMin + (view.yRange * j) / view.height;
       let x = 0;
       let y = 0;
-      for (let iter = 0; iter < maxIterations; iter++) {
+      for (let iter = 0; iter < view.maxIterations; iter++) {
         /* z <- z^2 + c
              = (x + yi)^2 + (a + bi)
              = x^2 -y^2 + 2xyi + a + bi
              = (x^2 -y^2 + a) + (2xy + b)i
         */
-        const xTemp = x ** 2 - y ** 2 + a;
+        const xSquared = x ** 2;
+        const ySquared = y ** 2;
+        const xTemp = xSquared - ySquared + a;
         y = 2 * x * y + b;
         x = xTemp;
-        if (x ** 2 + y ** 2 > escapeModulusSquared) {
+        if (xSquared + ySquared > escapeModulusSquared) {
           break;
         }
         escapeTime++;
@@ -44,6 +42,20 @@ export function mandelbrot(
   }
 
   return escapeTimes;
+}
+
+export function benchmark(
+  width: number,
+  height: number,
+  maxIterations: number
+) {
+  const view = reset(width, height, maxIterations);
+  const start = Date.now();
+  mandelbrot(view);
+  const duration = (Date.now() - start) / 1000; /// In seconds.
+  console.log(
+    `Ran ${maxIterations} iterations at ${width}x${height} in ${duration} sec.`
+  );
 }
 
 // Worker function.

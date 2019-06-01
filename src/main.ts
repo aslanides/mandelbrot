@@ -1,12 +1,13 @@
 /* Main entry point for the program. */
 
 import * as draw from './draw';
+import { benchmark } from './mandelbrot';
 import * as view from './view';
 
-export const MAX_ITERATIONS = 1000;
 const ZOOM_FACTOR = 2;
 const NUM_WORKERS = 9;
 const SQRT_NUM_WORKERS = Math.sqrt(NUM_WORKERS);
+const MAX_ITERATIONS = 1000;
 console.assert(SQRT_NUM_WORKERS === Math.floor(SQRT_NUM_WORKERS));
 
 function main() {
@@ -25,7 +26,7 @@ function main() {
   ctx.fillStyle = '#000000';
 
   // Create workers for rendering subviews.
-  let v = view.reset(ctx);
+  let v = view.reset(canvas.width, canvas.height, MAX_ITERATIONS);
   let views = new Array<view.View>(NUM_WORKERS);
   const workers = new Array<Worker>();
   for (let i = 0; i < NUM_WORKERS; i++) {
@@ -41,7 +42,7 @@ function main() {
   // Reset handler.
   const resetButton = document.getElementById('reset') as HTMLButtonElement;
   resetButton.addEventListener('click', _ => {
-    v = view.reset(ctx);
+    v = view.reset(canvas.width, canvas.height, MAX_ITERATIONS);
     views = view.split(v, NUM_WORKERS);
     for (let i = 0; i < NUM_WORKERS; i++) {
       workers[i].postMessage(views[i]);
@@ -49,7 +50,7 @@ function main() {
   });
 
   // Reset.
-  resetButton.dispatchEvent(new MouseEvent('click'))
+  resetButton.dispatchEvent(new MouseEvent('click'));
 
   // Zoom in handler.
   canvas.addEventListener('click', e => {

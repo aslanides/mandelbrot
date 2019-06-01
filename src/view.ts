@@ -12,6 +12,9 @@ export interface View {
   j: number;
   width: number;
   height: number;
+
+  // Metadata for Mandelbrot.
+  maxIterations: number;
 }
 
 export function zoom(event: MouseEvent, view: View, zoomFactor = 2): View {
@@ -33,7 +36,11 @@ export function zoom(event: MouseEvent, view: View, zoomFactor = 2): View {
   return view;
 }
 
-export function reset(ctx: CanvasRenderingContext2D): View {
+export function reset(
+  width: number,
+  height: number,
+  maxIterations: number
+): View {
   /* Resets to the 'default' view of the Mandelbrot set. */
 
   return {
@@ -43,8 +50,9 @@ export function reset(ctx: CanvasRenderingContext2D): View {
     yRange: 2,
     i: 0,
     j: 0,
-    width: ctx.canvas.width,
-    height: ctx.canvas.height,
+    width,
+    height,
+    maxIterations,
   };
 }
 
@@ -69,6 +77,7 @@ export function split(view: View, numWorkers: number): View[] {
         yRange: view.yRange / sqrtNumWorkers,
         xCenter: xMin + ((0.5 + i) * view.xRange) / sqrtNumWorkers,
         yCenter: yMin + ((0.5 + j) * view.yRange) / sqrtNumWorkers,
+        maxIterations: view.maxIterations,
       };
       views.push(subView);
     }
