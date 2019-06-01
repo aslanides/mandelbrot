@@ -1,102 +1,61 @@
-import { mandelbrot, View } from './mandelbrot';
+/* Main entry point for the program. */
 
-function zoom(event: MouseEvent, view: View, zoomFactor = 2): View {
-  /* Zooms the view given a user click. */
+import * as draw from './draw';
+import * as view from './view';
 
-  // Get the top left corner of the current view.
-  const xMin = view.xCenter - view.xRange / 2;
-  const yMin = view.yCenter - view.yRange / 2;
-
-  // Get the new view center.
-  view.xCenter = xMin + (view.xRange * event.layerX) / view.width;
-  view.yCenter = yMin + (view.yRange * event.layerY) / view.height;
-
-  // Zoom.
-  view.xRange /= zoomFactor;
-  view.yRange /= zoomFactor;
-
-  return view;
-}
-
-function draw(
-  ctx: CanvasRenderingContext2D,
-  escapeTimes: Float32Array,
-  maxIterations = 1000
-) {
-  // Reset canvas.
-  const width = ctx.canvas.width;
-  const height = ctx.canvas.height;
-  ctx.fillRect(0, 0, width, height);
-  // Get image data.
-  const numColors = 255 ** 3;
-  const imageData = ctx.getImageData(0, 0, width, height);
-  const histogram = new Float32Array(maxIterations);
-
-  let totalIterations = 0;
-  for (let i = 0; i < width * height; i++) {
-    const time = escapeTimes[i];
-    histogram[time]++;
-    totalIterations++;
-  }
-
-  for (let i = 0; i < width * height; i++) {
-    const time = escapeTimes[i];
-    let color = Math.floor((histogram[time] * numColors) / totalIterations);
-    for (let channel = 0; channel < 3; channel++) {
-      imageData.data[4 * i + channel] = color % 255;
-      color /= 255;
-    }
-  }
-
-  ctx.putImageData(imageData, 0, 0);
-}
-
-function reset(ctx: CanvasRenderingContext2D): View {
-  /* Resets to the 'default' view of the Mandelbrot set. */
-
-  return {
-    xCenter: -0.75,
-    yCenter: 0,
-    xRange: 3.5,
-    yRange: 2,
-    width: ctx.canvas.width,
-    height: ctx.canvas.height,
-  };
-}
+export const MAX_ITERATIONS = 1000;
+const NUM_WORKERS = 9;
+const SQRT_NUM_WORKERS = Math.sqrt(NUM_WORKERS);
+console.assert(SQRT_NUM_WORKERS === Math.floor(SQRT_NUM_WORKERS));
 
 function main() {
-  /* Runs the Mandelbrot visualization.*/
+  /* Runs the Mandelbrot visualization. */
 
   // Get the canvas.
   const canvas = document.getElementById('canvas') as HTMLCanvasElement;
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
+  // Ensure that the canvas dimensions are divisible by sqrt(numWorkers).
+  canvas.width -= canvas.width % SQRT_NUM_WORKERS;
+  canvas.height -= canvas.height % SQRT_NUM_WORKERS;
 
   // Get the rendering context and set fill to black.
   const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
   ctx.fillStyle = '#000000';
 
-  // Get a reset button.
+  // Create workers for rendering subviews.
+  let v = view.reset(ctx);
+  let views = new Array<view.View>(NUM_WORKERS);
+  const workers = new Array<Worker>(NUM_WORKERS);
+  for (let i = 0; i < NUM_WORKERS; i++) {
+    // Create a new 'Mandelbrot worker'.
+    const worker = new Worker('mandelbrot.ts');
+    worker.onmessage = (e: MessageEvent) => {
+      const times = e.data as Uint32Array;
+      draw.draw(ctx, views[i], times, MAX_ITERATIONS);
+    };
+    workers[i] = worker;
+  }
+
+  // Reset handler.
   const resetButton = document.getElementById('reset') as HTMLButtonElement;
-  const worker = new Worker('mandelbrot.ts');
-
-  let view: View;
-  worker.onmessage = (e: MessageEvent) => {
-    const times = e.data as Float32Array;
-    draw(ctx, times);
-  };
-
-  // Add event listeners for reset and zoom.
   resetButton.addEventListener('click', _ => {
-    view = reset(ctx);
-    worker.postMessage(view);
-  });
-  canvas.addEventListener('click', e => {
-    view = zoom(e, view);
-    worker.postMessage(view);
+    v = view.reset(ctx);
+    views = view.split(v, NUM_WORKERS);
+    console.log(views);
+    for (let i = 0; i < NUM_WORKERS; i++) {
+      workers[i].postMessage(views[i]);
+    }
   });
 
-  //
+  // Zoom handler.
+  canvas.addEventListener('click', e => {
+    v = view.zoom(e, v);
+    views = view.split(v, NUM_WORKERS);
+    for (let i = 0; i < NUM_WORKERS; i++) {
+      workers[i].postMessage(views[i]);
+    }
+  });
 }
 
 main();

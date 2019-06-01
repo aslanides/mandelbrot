@@ -5,6 +5,7 @@
   "main": "src/main.ts",
   "scripts": {
     "serve": "parcel src/index.html",
+    "build": "gts fix; parcel build src/index.html",
     "fix": "gts fix"
   },
   "repository": {

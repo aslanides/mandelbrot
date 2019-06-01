@@ -1,29 +1,22 @@
-export interface View {
-  xCenter: number;
-  yCenter: number;
-  xRange: number;
-  yRange: number;
-  width: number;
-  height: number;
-}
+/* Functions for computing the Mandelbrot set. */
+
+import { View } from './view';
 
 export function mandelbrot(
   view: View,
   maxIterations = 1000,
-  escapeModulusSquared = 256
-): Float32Array {
+  escapeModulusSquared = 4
+): Uint32Array {
   /* Naive escape time algorithm.*/
 
   // Get image bounds in the coordinate system.
   const xMin = view.xCenter - view.xRange / 2;
   const yMin = view.yCenter - view.yRange / 2;
-  console.log(
-    `Computing Mandelbrot, centered on ${view.xCenter} + ${view.yCenter}i.`
-  );
+  console.log(`Computing; centered on ${view.xCenter} + ${view.yCenter}i.`);
 
-  const escapeTimes = new Float32Array(view.width * view.height);
+  const escapeTimes = new Uint32Array(view.width * view.height);
 
-  // Color each pixel by escape time.
+  // Compute escape time for each pixel.
   for (let i = 0; i < view.width; i++) {
     for (let j = 0; j < view.height; j++) {
       let escapeTime = 0;
@@ -54,6 +47,7 @@ export function mandelbrot(
   return escapeTimes;
 }
 
+// Worker function.
 onmessage = (e: MessageEvent) => {
   const view = e.data as View;
   const times = mandelbrot(view);
