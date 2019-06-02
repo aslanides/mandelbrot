@@ -72,7 +72,7 @@ export function draw(
   ctx.putImageData(imageData, i, j);
   ctx.fillStyle = 'white';
   ctx.fillText(
-    'left click to zoom in. right click to zoom out. r to reset.',
+    'left click to zoom in. right click to zoom out. b to undo. r to reset.',
     10,
     10
   );

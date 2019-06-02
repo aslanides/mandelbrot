@@ -37,6 +37,11 @@ export function mandelbrot(view: View, escapeModulusSquared = 4): Uint32Array {
         escapeTime++;
       }
 
+      if (escapeTime < view.maxIterations) {
+        const nu = Math.log2(Math.log2(x ** 2 + y ** 2));
+        // escapeTime += nu - 4.0;
+      }
+
       escapeTimes[i + view.width * j] = escapeTime;
     }
   }

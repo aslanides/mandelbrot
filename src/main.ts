@@ -1,8 +1,7 @@
 /* Main entry point for the program. */
 
-import * as draw from './draw';
-import { benchmark } from './mandelbrot';
-import * as view from './view';
+import { draw } from './draw';
+import { View, reset, split, zoom } from './view';
 
 const ZOOM_FACTOR = 2;
 const NUM_WORKERS = 9;
@@ -26,48 +25,62 @@ function main() {
   ctx.fillStyle = '#000000';
 
   // Create workers for rendering subviews.
-  let views = new Array<view.View>(NUM_WORKERS);
+  let views = new Array<View>(NUM_WORKERS);
   const workers = new Array<Worker>();
   for (let i = 0; i < NUM_WORKERS; i++) {
     // Create a new 'Mandelbrot worker'.
     const worker = new Worker('mandelbrot.ts');
     worker.onmessage = (e: MessageEvent) => {
       const times = e.data as Uint32Array;
-      draw.draw(ctx, views[i], times, MAX_ITERATIONS);
+      draw(ctx, views[i], times, MAX_ITERATIONS);
     };
     workers.push(worker);
   }
 
   // Function to dispatch work to each worker.
-  const dispatch = (v: view.View) => {
-    views = view.split(v, NUM_WORKERS);
+  const dispatch = (v: View) => {
+    views = split(v, NUM_WORKERS);
     for (let i = 0; i < NUM_WORKERS; i++) {
       workers[i].postMessage(views[i]);
     }
   };
 
-  // Initial view.
-  let v = view.reset(canvas.width, canvas.height, MAX_ITERATIONS);
-  dispatch(v);
+  // Initial
+  let view = reset(canvas.width, canvas.height, MAX_ITERATIONS);
+  dispatch(view);
+  const undoStack = new Array<View>();
 
   // Key 'r' to reset.
   window.addEventListener('keypress', (e: KeyboardEvent) => {
-    if (e.key !== 'r') return;
-    v = view.reset(canvas.width, canvas.height, MAX_ITERATIONS);
-    dispatch(v);
+    if (e.key === 'r') {
+      // Reset
+      view = reset(canvas.width, canvas.height, MAX_ITERATIONS);
+      while (undoStack.length) {
+        undoStack.pop();
+      }
+      dispatch(view);
+    } else if (e.key === 'b') {
+      // Undo
+      if (undoStack.length) {
+        view = undoStack.pop() as View;
+        dispatch(view);
+      }
+    }
   });
 
   // Left click to zoom in.
   canvas.addEventListener('click', e => {
-    v = view.zoom(e, v, ZOOM_FACTOR);
-    dispatch(v);
+    undoStack.push(Object.assign({}, view));
+    view = zoom(e, view, ZOOM_FACTOR);
+    dispatch(view);
   });
 
   // Right click to zoom out.
   canvas.addEventListener('contextmenu', e => {
     e.preventDefault();
-    v = view.zoom(e, v, 1 / ZOOM_FACTOR);
-    dispatch(v);
+    undoStack.push(Object.assign({}, view));
+    view = zoom(e, view, 1 / ZOOM_FACTOR);
+    dispatch(view);
   });
 }
 
