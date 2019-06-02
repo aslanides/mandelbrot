@@ -26,7 +26,6 @@ function main() {
   ctx.fillStyle = '#000000';
 
   // Create workers for rendering subviews.
-  let v = view.reset(canvas.width, canvas.height, MAX_ITERATIONS);
   let views = new Array<view.View>(NUM_WORKERS);
   const workers = new Array<Worker>();
   for (let i = 0; i < NUM_WORKERS; i++) {
@@ -39,36 +38,36 @@ function main() {
     workers.push(worker);
   }
 
-  // Reset handler.
-  const resetButton = document.getElementById('reset') as HTMLButtonElement;
-  resetButton.addEventListener('click', _ => {
-    v = view.reset(canvas.width, canvas.height, MAX_ITERATIONS);
+  // Function to dispatch work to each worker.
+  const dispatch = (v: view.View) => {
     views = view.split(v, NUM_WORKERS);
     for (let i = 0; i < NUM_WORKERS; i++) {
       workers[i].postMessage(views[i]);
     }
+  };
+
+  // Initial view.
+  let v = view.reset(canvas.width, canvas.height, MAX_ITERATIONS);
+  dispatch(v);
+
+  // Key 'r' to reset.
+  window.addEventListener('keypress', (e: KeyboardEvent) => {
+    if (e.key !== 'r') return;
+    v = view.reset(canvas.width, canvas.height, MAX_ITERATIONS);
+    dispatch(v);
   });
 
-  // Reset.
-  resetButton.dispatchEvent(new MouseEvent('click'));
-
-  // Zoom in handler.
+  // Left click to zoom in.
   canvas.addEventListener('click', e => {
     v = view.zoom(e, v, ZOOM_FACTOR);
-    views = view.split(v, NUM_WORKERS);
-    for (let i = 0; i < NUM_WORKERS; i++) {
-      workers[i].postMessage(views[i]);
-    }
+    dispatch(v);
   });
 
-  // Zoom out handler.
+  // Right click to zoom out.
   canvas.addEventListener('contextmenu', e => {
     e.preventDefault();
     v = view.zoom(e, v, 1 / ZOOM_FACTOR);
-    views = view.split(v, NUM_WORKERS);
-    for (let i = 0; i < NUM_WORKERS; i++) {
-      workers[i].postMessage(views[i]);
-    }
+    dispatch(v);
   });
 }
 
