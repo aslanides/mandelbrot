@@ -4,9 +4,8 @@
   "description": "Messing around with Mandelbrot set and TypeScript.",
   "main": "src/main.ts",
   "scripts": {
-    "serve": "parcel src/index.html",
-    "build": "gts fix; parcel build src/index.html",
-    "fix": "gts fix"
+    "build": "parcel build src/index.html --public-url './' --out-dir docs",
+    "serve": "gts fix; parcel src/index.html"
   },
   "repository": {
     "type": "git",
@@ -25,7 +24,7 @@
   },
   "homepage": "https://github.com/aslanides/mandelbrot#readme",
   "dependencies": {
-    "parcel-bundler": "^1.12.3"
+    "parcel-bundler": "^1.12.4"
   },
   "devDependencies": {
     "gts": "^1.0.0",
