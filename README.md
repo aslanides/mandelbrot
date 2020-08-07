@@ -1,6 +1,12 @@
 # Mandelbrot
 
-Messing around with Typescript.
+Messing around with TypesSript. See [aslanides.io/mandelbrot](https://aslanides.io/mandelbrot) for site.
+
+[![](https://aslanides.io/assets/mandelbrot/1.png){:width="15%"}](https://aslanides.io/assets/mandelbrot/1.png)
+[![](https://aslanides.io/assets/mandelbrot/2.png){:width="15%"}](https://aslanides.io/assets/mandelbrot/2.png)
+[![](https://aslanides.io/assets/mandelbrot/3.png){:width="15%"}](https://aslanides.io/assets/mandelbrot/3.png)
+[![](https://aslanides.io/assets/mandelbrot/4.png){:width="15%"}](https://aslanides.io/assets/mandelbrot/4.png)
+[![](https://aslanides.io/assets/mandelbrot/5.png){:width="15%"}](https://aslanides.io/assets/mandelbrot/5.png)
 
 ## Set-up
 
